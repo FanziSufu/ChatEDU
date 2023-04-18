@@ -34,6 +34,85 @@ if TYPE_CHECKING:
         headers: List[str]
         data: List[List[str | int | bool]]
 
+def predict(current_model, *args):
+    iter = current_model.predict(*args)
+    for i in iter:
+        yield i
+
+def billing_info(current_model):
+    return current_model.billing_info()
+
+def set_key(current_model, *args):
+    return current_model.set_key(*args)
+
+def load_chat_history(current_model, *args):
+    return current_model.load_chat_history(*args)
+
+def interrupt(current_model, *args):
+    return current_model.interrupt(*args)
+
+def reset(current_model, *args):
+    return current_model.reset(*args)
+
+def retry(current_model, *args):
+    iter = current_model.retry(*args)
+    for i in iter:
+        yield i
+
+def delete_first_conversation(current_model, *args):
+    return current_model.delete_first_conversation(*args)
+
+def delete_last_conversation(current_model, *args):
+    return current_model.delete_last_conversation(*args)
+
+def set_system_prompt(current_model, *args):
+    return current_model.set_system_prompt(*args)
+
+def save_chat_history(current_model, *args):
+    return current_model.save_chat_history(*args)
+
+def export_markdown(current_model, *args):
+    return current_model.export_markdown(*args)
+
+def load_chat_history(current_model, *args):
+    return current_model.load_chat_history(*args)
+
+def set_token_upper_limit(current_model, *args):
+    return current_model.set_token_upper_limit(*args)
+
+def set_temperature(current_model, *args):
+    current_model.set_temperature(*args)
+
+def set_top_p(current_model, *args):
+    current_model.set_top_p(*args)
+
+def set_n_choices(current_model, *args):
+    current_model.set_n_choices(*args)
+
+def set_stop_sequence(current_model, *args):
+    current_model.set_stop_sequence(*args)
+
+def set_max_tokens(current_model, *args):
+    current_model.set_max_tokens(*args)
+
+def set_presence_penalty(current_model, *args):
+    current_model.set_presence_penalty(*args)
+
+def set_frequency_penalty(current_model, *args):
+    current_model.set_frequency_penalty(*args)
+
+def set_logit_bias(current_model, *args):
+    current_model.set_logit_bias(*args)
+
+def set_user_identifier(current_model, *args):
+    current_model.set_user_identifier(*args)
+
+def set_single_turn(current_model, *args):
+    current_model.set_single_turn(*args)
+
+def handle_file_upload(current_model, *args):
+    return current_model.handle_file_upload(*args)
+
 
 def count_token(message):
     encoding = tiktoken.get_encoding("cl100k_base")
@@ -121,10 +200,13 @@ def convert_asis(userinput):
 
 
 def detect_converted_mark(userinput):
-    if userinput.endswith(ALREADY_CONVERTED_MARK):
+    try:
+        if userinput.endswith(ALREADY_CONVERTED_MARK):
+            return True
+        else:
+            return False
+    except:
         return True
-    else:
-        return False
 
 
 def detect_language(code):
@@ -297,16 +379,16 @@ def get_geoip():
         logging.warning(f"无法获取IP地址信息。\n{data}")
         if data["reason"] == "RateLimited":
             return (
-                f"您的IP区域：未知。"
+                i18n("您的IP区域：未知。")
             )
         else:
-            return f"获取IP地理位置失败。原因：{data['reason']}。你仍然可以使用聊天功能。"
+            return i18n("获取IP地理位置失败。原因：") + f"{data['reason']}" + i18n("。你仍然可以使用聊天功能。")
     else:
         country = data["country_name"]
         if country == "China":
             text = "**您的IP区域：中国。请立即检查代理设置，在不受支持的地区使用API可能导致账号被封禁。**"
         else:
-            text = f"您的IP区域：{country}。"
+            text = i18n("您的IP区域：") + f"{country}。"
         logging.info(text)
         return text
 
@@ -369,11 +451,11 @@ Error code: {result.returncode}""")
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
     if result.returncode != 0:
         message = f"""{errdesc or 'Error running command'}.
-Command: {command}
-Error code: {result.returncode}
-stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
-"""
+            Command: {command}
+            Error code: {result.returncode}
+            stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
+            stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
+            """
         raise RuntimeError(message)
     return result.stdout.decode(encoding="utf8", errors="ignore")
 
@@ -390,12 +472,12 @@ def versions_html():
     else:
         commit_info = "unknown \U0001F615"
     return f"""
-Python: <span title="{sys.version}">{python_version}</span>
- • 
-Gradio: {gr.__version__}
- • 
-Commit: {commit_info}
-"""
+        Python: <span title="{sys.version}">{python_version}</span>
+         • 
+        Gradio: {gr.__version__}
+         • 
+        Commit: {commit_info}
+        """
 
 def add_source_numbers(lst, source_name = "Source", use_source = True):
     if use_source:
