@@ -13,7 +13,7 @@ LLAMA_INFERENCER = None
 
 # ChatGPT 设置
 INITIAL_SYSTEM_PROMPT = "You are a helpful assistant."
-API_HOST = "api.openai.com"
+API_HOST = "openai.api2d.net"
 COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
 BALANCE_API_URL="https://api.openai.com/dashboard/billing/credit_grants"
 USAGE_API_URL="https://api.openai.com/dashboard/billing/usage"
@@ -61,12 +61,11 @@ SUMMARIZE_PROMPT = "你是谁？我们刚才聊了什么？"  # 总结对话时�
 
 ONLINE_MODELS = [
     "chatglm-130b",
-    "xmbot",
+    "gpt-3.5-turbo",
 ]
 
 LOCAL_MODELS = [
-    "chatglm-6b",
-    "llama-7b-hf"
+    "chatglm-6b"
 ]
 
 if os.environ.get('HIDE_LOCAL_MODELS', 'false') == 'true':
