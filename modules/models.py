@@ -77,31 +77,31 @@ class OpenAIClient(BaseLLMModel):
             return input_token_count + system_prompt_token_count
         return input_token_count
 
-    def billing_info(self):
-        try:
-            curr_time = datetime.datetime.now()
-            last_day_of_month = get_last_day_of_month(
-                curr_time).strftime("%Y-%m-%d")
-            first_day_of_month = curr_time.replace(day=1).strftime("%Y-%m-%d")
-            usage_url = f"{shared.state.usage_api_url}?start_date={first_day_of_month}&end_date={last_day_of_month}"
-            try:
-                usage_data = self._get_billing_data(usage_url)
-            except Exception as e:
-                logging.error(f"获取API使用情况失败:" + str(e))
-                return i18n("**获取API使用情况失败**")
-            rounded_usage = "{:.5f}".format(usage_data["total_usage"] / 100)
-            return i18n("**本月使用金额** ") + f"\u3000 ${rounded_usage}"
-        except requests.exceptions.ConnectTimeout:
-            status_text = (
-                STANDARD_ERROR_MSG + CONNECTION_TIMEOUT_MSG + ERROR_RETRIEVE_MSG
-            )
-            return status_text
-        except requests.exceptions.ReadTimeout:
-            status_text = STANDARD_ERROR_MSG + READ_TIMEOUT_MSG + ERROR_RETRIEVE_MSG
-            return status_text
-        except Exception as e:
-            logging.error(i18n("获取API使用情况失败:") + str(e))
-            return STANDARD_ERROR_MSG + ERROR_RETRIEVE_MSG
+    # def billing_info(self):
+    #     try:
+    #         curr_time = datetime.datetime.now()
+    #         last_day_of_month = get_last_day_of_month(
+    #             curr_time).strftime("%Y-%m-%d")
+    #         first_day_of_month = curr_time.replace(day=1).strftime("%Y-%m-%d")
+    #         usage_url = f"{shared.state.usage_api_url}?start_date={first_day_of_month}&end_date={last_day_of_month}"
+    #         try:
+    #             usage_data = self._get_billing_data(usage_url)
+    #         except Exception as e:
+    #             logging.error(f"获取API使用情况失败:" + str(e))
+    #             return i18n("**获取API使用情况失败**")
+    #         rounded_usage = "{:.5f}".format(usage_data["total_usage"] / 100)
+    #         return i18n("**本月使用金额** ") + f"\u3000 ${rounded_usage}"
+    #     except requests.exceptions.ConnectTimeout:
+    #         status_text = (
+    #             STANDARD_ERROR_MSG + CONNECTION_TIMEOUT_MSG + ERROR_RETRIEVE_MSG
+    #         )
+    #         return status_text
+    #     except requests.exceptions.ReadTimeout:
+    #         status_text = STANDARD_ERROR_MSG + READ_TIMEOUT_MSG + ERROR_RETRIEVE_MSG
+    #         return status_text
+    #     except Exception as e:
+    #         logging.error(i18n("获取API使用情况失败:") + str(e))
+    #         return STANDARD_ERROR_MSG + ERROR_RETRIEVE_MSG
 
     def set_token_upper_limit(self, new_upper_limit):
         pass
@@ -191,6 +191,8 @@ class OpenAIClient(BaseLLMModel):
             if chunk:
                 chunk = chunk.decode()
                 chunk_length = len(chunk)
+                if chunk == 'data: [DONE]':
+                    break
                 try:
                     chunk = json.loads(chunk[6:])
                 except json.JSONDecodeError:
