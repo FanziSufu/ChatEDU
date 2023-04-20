@@ -443,7 +443,7 @@ if __name__ == "__main__":
     reload_javascript()
     demo.queue(concurrency_count=CONCURRENT_COUNT).launch(
         server_name='0.0.0.0',
-        server_port=7865,
+        server_port=7860,
         share=False,
         auth=auth_list if authflag else None,
         favicon_path="./assets/favicon.ico",
