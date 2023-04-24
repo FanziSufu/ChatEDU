@@ -62,10 +62,13 @@ SUMMARIZE_PROMPT = "你是谁？我们刚才聊了什么？"  # 总结对话时�
 ONLINE_MODELS = [
     "chatglm-130b",
     "gpt-3.5-turbo",
+    "xmchat"
 ]
 
 LOCAL_MODELS = [
-    "chatglm-6b"
+    "chatglm-6b",
+    "StableLM",
+    "MOSS"
 ]
 
 if os.environ.get('HIDE_LOCAL_MODELS', 'false') == 'true':

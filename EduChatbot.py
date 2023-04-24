@@ -10,7 +10,7 @@ from modules.config import *
 from modules.utils import *
 from modules.presets import *
 from modules.overwrites import *
-from modules.models import get_model
+from modules.models.models import get_model
 
 
 gr.Chatbot._postprocess_chat_messages = postprocess_chat_messages
@@ -68,13 +68,18 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                 retryBtn = gr.Button(i18n("🔄 重新生成"))
                 delFirstBtn = gr.Button(i18n("🗑️ 删除最旧对话"))
                 delLastBtn = gr.Button(i18n("🗑️ 删除最新对话"))
+                with gr.Row(visible=False) as like_dislike_area:
+                    with gr.Column(min_width=20, scale=1):
+                        likeBtn = gr.Button(i18n("👍"))
+                    with gr.Column(min_width=20, scale=1):
+                        dislikeBtn = gr.Button(i18n("👎"))
 
         with gr.Column():
             with gr.Column(min_width=50, scale=1):
                 with gr.Tab(label=i18n("模型")):
                     keyTxt = gr.Textbox(
                         show_label=True,
-                        placeholder=f"OpenAI API-key...",
+                        placeholder=f"Your API-key...",
                         value=hide_middle_chars(user_api_key.value),
                         type="password",
                         visible=not HIDE_MY_KEY,
@@ -102,7 +107,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         multiselect=False,
                         value=REPLY_LANGUAGES[0],
                     )
-                    index_files = gr.Files(label=i18n("上传索引文件"), type="file")
+                    index_files = gr.Files(label=i18n("上传"), type="file")
                     two_column = gr.Checkbox(label=i18n("双栏pdf"), value=advance_docs["pdf"].get("two_column", False))
                     # TODO: 公式ocr
                     # formula_ocr = gr.Checkbox(label=i18n("识别公式"), value=advance_docs["pdf"].get("formula_ocr", False))
@@ -269,6 +274,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         default_btn = gr.Button(i18n("🔙 恢复默认设置"))
 
     gr.HTML(FOOTER.format(versions=versions_html()), elem_id="footer")
+    demo.load(refresh_ui_elements_on_load, [current_model, model_select_dropdown], [like_dislike_area], show_progress=False)
     chatgpt_predict_args = dict(
         fn=predict,
         inputs=[
@@ -360,6 +366,20 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         show_progress=False
     )
 
+    likeBtn.click(
+        like,
+        [current_model],
+        [status_display],
+        show_progress=False
+    )
+
+    dislikeBtn.click(
+        dislike,
+        [current_model],
+        [status_display],
+        show_progress=False
+    )
+
     two_column.change(update_doc_config, [two_column], None)
 
     # LLM Models
@@ -367,6 +387,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
     keyTxt.submit(**get_usage_args)
     single_turn_checkbox.change(set_single_turn, [current_model, single_turn_checkbox], None)
     model_select_dropdown.change(get_model, [model_select_dropdown, lora_select_dropdown, user_api_key, temperature_slider, top_p_slider, systemPromptTxt], [current_model, status_display, lora_select_dropdown], show_progress=True)
+    model_select_dropdown.change(toggle_like_btn_visibility, [model_select_dropdown], [like_dislike_area], show_progress=False)
     lora_select_dropdown.change(get_model, [model_select_dropdown, lora_select_dropdown, user_api_key, temperature_slider, top_p_slider, systemPromptTxt], [current_model, status_display], show_progress=True)
 
     # Template
