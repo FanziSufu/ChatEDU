@@ -6,11 +6,20 @@ import gradio as gr
 from .webui_locale import I18nAuto
 
 i18n = I18nAuto()  # internationalization
+# 获取当前文件所在的目录的绝对路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 逐级向上查找，直到找到根目录
+root_dir = current_dir
+while not os.path.isfile(os.path.join(root_dir, 'config.json')):
+    root_dir = os.path.dirname(root_dir)
+# 拼接根目录和config.json的路径
+config_path = os.path.join(root_dir, 'config.json')
 if os.path.exists("config.json"):
-    with open("config.json", "r", encoding='utf-8') as f:
-        config = json.load(f)
+    # 读取config.json文件
+    with open(config_path, 'r') as f:
+        config_data = json.load(f)
 else:
-    config = {}
+    config_data = {}
 
 CHATGLM_MODEL = None
 CHATGLM_TOKENIZER = None
@@ -23,7 +32,7 @@ API_HOST = "openai.api2d.net"
 COMPLETION_URL = f"https://{API_HOST}/v1/chat/completions"
 BALANCE_API_URL = f"https://{API_HOST}/dashboard/billing/credit_grants"
 USAGE_API_URL = f"https://{API_HOST}/dashboard/billing/usage"
-CHATGLM_6B_URL = config['CHATGLM_6B_URL']
+CHATGLM_6B_URL = config_data['CHATGLM_6B_URL']
 HISTORY_DIR = Path("history")
 HISTORY_DIR = "history"
 TEMPLATES_DIR = "templates"
