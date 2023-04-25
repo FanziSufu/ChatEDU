@@ -1,10 +1,16 @@
 # -*- coding:utf-8 -*-
 import os
+import json
 from pathlib import Path
 import gradio as gr
 from .webui_locale import I18nAuto
 
 i18n = I18nAuto()  # internationalization
+if os.path.exists("config.json"):
+    with open("config.json", "r", encoding='utf-8') as f:
+        config = json.load(f)
+else:
+    config = {}
 
 CHATGLM_MODEL = None
 CHATGLM_TOKENIZER = None
@@ -17,7 +23,7 @@ API_HOST = "openai.api2d.net"
 COMPLETION_URL = f"https://{API_HOST}/v1/chat/completions"
 BALANCE_API_URL = f"https://{API_HOST}/dashboard/billing/credit_grants"
 USAGE_API_URL = f"https://{API_HOST}/dashboard/billing/usage"
-CHATGLM_6B_URL = "http://10.109.68.1:8081/v1/chat/completions"
+CHATGLM_6B_URL = config['CHATGLM_6B_URL']
 HISTORY_DIR = Path("history")
 HISTORY_DIR = "history"
 TEMPLATES_DIR = "templates"
