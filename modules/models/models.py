@@ -317,76 +317,189 @@ class ZhiPuClient(BaseLLMModel):
         return msg
 
 
+# class ChatGLM_Client(BaseLLMModel):
+#     def __init__(self, model_name) -> None:
+#         super().__init__(model_name=model_name)
+#         from transformers import AutoTokenizer, AutoModel
+#         import torch
+#         global CHATGLM_TOKENIZER, CHATGLM_MODEL
+#         if CHATGLM_TOKENIZER is None or CHATGLM_MODEL is None:
+#             system_name = platform.system()
+#             model_path = None
+#             if os.path.exists("models"):
+#                 model_dirs = os.listdir("models")
+#                 if model_name in model_dirs:
+#                     model_path = f"models/{model_name}"
+#             if model_path is not None:
+#                 model_source = model_path
+#             else:
+#                 model_source = f"THUDM/{model_name}"
+#             CHATGLM_TOKENIZER = AutoTokenizer.from_pretrained(
+#                 model_source, trust_remote_code=True
+#             )
+#             quantified = False
+#             if "int4" in model_name:
+#                 quantified = True
+#             model = AutoModel.from_pretrained(
+#                     model_source, trust_remote_code=True
+#                 )
+#             if torch.cuda.is_available():
+#                 # run on CUDA
+#                 logging.info("CUDA is available, using CUDA")
+#                 model = model.half().cuda()
+#             # mps加速还存在一些问题，暂时不使用
+#             elif system_name == "Darwin" and model_path is not None and not quantified:
+#                 logging.info("Running on macOS, using MPS")
+#                 # running on macOS and model already downloaded
+#                 model = model.half().to("mps")
+#             else:
+#                 logging.info("GPU is not available, using CPU")
+#                 model = model.float()
+#             model = model.eval()
+#             CHATGLM_MODEL = model
+#
+#     def _get_glm_style_input(self):
+#         history = [x["content"] for x in self.history]
+#         query = history.pop()
+#         logging.debug(colorama.Fore.YELLOW +
+#                       f"{history}" + colorama.Fore.RESET)
+#         assert (
+#             len(history) % 2 == 0
+#         ), f"History should be even length. current history is: {history}"
+#         history = [[history[i], history[i + 1]]
+#                    for i in range(0, len(history), 2)]
+#         return history, query
+#
+#     def get_answer_at_once(self):
+#         history, query = self._get_glm_style_input()
+#         response, _ = CHATGLM_MODEL.chat(
+#             CHATGLM_TOKENIZER, query, history=history)
+#         return response, len(response)
+#
+#     def get_answer_stream_iter(self):
+#         history, query = self._get_glm_style_input()
+#         for response, history in CHATGLM_MODEL.stream_chat(
+#             CHATGLM_TOKENIZER,
+#             query,
+#             history,
+#             max_length=self.token_upper_limit,
+#             top_p=self.top_p,
+#             temperature=self.temperature,
+#         ):
+#             yield response
+
+
 class ChatGLM_Client(BaseLLMModel):
-    def __init__(self, model_name) -> None:
-        super().__init__(model_name=model_name)
-        from transformers import AutoTokenizer, AutoModel
-        import torch
-        global CHATGLM_TOKENIZER, CHATGLM_MODEL
-        if CHATGLM_TOKENIZER is None or CHATGLM_MODEL is None:
-            system_name = platform.system()
-            model_path = None
-            if os.path.exists("models"):
-                model_dirs = os.listdir("models")
-                if model_name in model_dirs:
-                    model_path = f"models/{model_name}"
-            if model_path is not None:
-                model_source = model_path
-            else:
-                model_source = f"THUDM/{model_name}"
-            CHATGLM_TOKENIZER = AutoTokenizer.from_pretrained(
-                model_source, trust_remote_code=True
-            )
-            quantified = False
-            if "int4" in model_name:
-                quantified = True
-            model = AutoModel.from_pretrained(
-                    model_source, trust_remote_code=True
-                )
-            if torch.cuda.is_available():
-                # run on CUDA
-                logging.info("CUDA is available, using CUDA")
-                model = model.half().cuda()
-            # mps加速还存在一些问题，暂时不使用
-            elif system_name == "Darwin" and model_path is not None and not quantified:
-                logging.info("Running on macOS, using MPS")
-                # running on macOS and model already downloaded
-                model = model.half().to("mps")
-            else:
-                logging.info("GPU is not available, using CPU")
-                model = model.float()
-            model = model.eval()
-            CHATGLM_MODEL = model
-
-    def _get_glm_style_input(self):
-        history = [x["content"] for x in self.history]
-        query = history.pop()
-        logging.debug(colorama.Fore.YELLOW +
-                      f"{history}" + colorama.Fore.RESET)
-        assert (
-            len(history) % 2 == 0
-        ), f"History should be even length. current history is: {history}"
-        history = [[history[i], history[i + 1]]
-                   for i in range(0, len(history), 2)]
-        return history, query
-
-    def get_answer_at_once(self):
-        history, query = self._get_glm_style_input()
-        response, _ = CHATGLM_MODEL.chat(
-            CHATGLM_TOKENIZER, query, history=history)
-        return response, len(response)
+    def __init__(
+        self,
+        model_name,
+        system_prompt=INITIAL_SYSTEM_PROMPT,
+        temperature=1.0,
+        top_p=1.0,
+    ) -> None:
+        super().__init__(
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            system_prompt=system_prompt,
+        )
+        self.need_api_key = False
+        self._refresh_header()
 
     def get_answer_stream_iter(self):
-        history, query = self._get_glm_style_input()
-        for response, history in CHATGLM_MODEL.stream_chat(
-            CHATGLM_TOKENIZER,
-            query,
-            history,
-            max_length=self.token_upper_limit,
-            top_p=self.top_p,
-            temperature=self.temperature,
-        ):
-            yield response
+        response = self._get_response(stream=True)
+        if response is not None:
+            iter = self._decode_chat_response(response)
+            partial_text = ""
+            for i in iter:
+                partial_text += i
+                yield partial_text
+        else:
+            yield STANDARD_ERROR_MSG + GENERAL_ERROR_MSG
+
+    def get_answer_at_once(self):
+        response = self._get_response()
+        response = json.loads(response.text)
+        content = response["choices"][0]["message"]["content"]
+        total_token_count = response["usage"]["total_tokens"]
+        return content, total_token_count
+
+    def count_token(self, user_input):
+        input_token_count = count_token(construct_user(user_input))
+        if self.system_prompt is not None and len(self.all_token_counts) == 0:
+            system_prompt_token_count = count_token(
+                construct_system(self.system_prompt)
+            )
+            return input_token_count + system_prompt_token_count
+        return input_token_count
+
+    def set_token_upper_limit(self, new_upper_limit):
+        pass
+
+    @shared.state.switching_api_key  # 在不开启多账号模式的时候，这个装饰器不会起作用
+    def _get_response(self, stream=False):
+        system_prompt = self.system_prompt
+        history = self.history
+        logging.debug(colorama.Fore.YELLOW +
+                      f"{history}" + colorama.Fore.RESET)
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        if system_prompt is not None:
+            history = [construct_system(system_prompt), *history]
+
+        payload = {
+            "model": self.model_name,
+            "messages": history,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stream": stream
+        }
+
+        if self.max_generation_token is not None:
+            payload["max_tokens"] = self.max_generation_token
+
+        with retrieve_proxy():
+            try:
+                response = requests.post(
+                    CHATGLM_6B_URL,
+                    headers=headers,
+                    json=payload
+                )
+            except:
+                return None
+        return response
+
+    def _refresh_header(self):
+        self.headers = {
+            "Content-Type": "application/json",
+        }
+
+    def _decode_chat_response(self, response):
+        error_msg = ""
+        for chunk in response.iter_lines():
+            if chunk:
+                chunk = chunk.decode()
+                chunk_length = len(chunk)
+                if chunk == 'data: [DONE]':
+                    break
+                try:
+                    chunk = json.loads(chunk[6:])
+                except json.JSONDecodeError:
+                    print(i18n("JSON解析错误,收到的内容: ") + f"{chunk}")
+                    error_msg += chunk
+                    continue
+                if chunk_length > 6 and "delta" in chunk["choices"][0]:
+                    if chunk["choices"][0]["finish_reason"] == "stop":
+                        break
+                    try:
+                        yield chunk["choices"][0]["delta"]["content"]
+                    except Exception as e:
+                        # logging.error(f"Error: {e}")
+                        continue
+        if error_msg:
+            raise Exception(error_msg)
 
 
 class LLaMA_Client(BaseLLMModel):

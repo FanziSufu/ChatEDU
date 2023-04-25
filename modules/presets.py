@@ -17,6 +17,7 @@ API_HOST = "openai.api2d.net"
 COMPLETION_URL = f"https://{API_HOST}/v1/chat/completions"
 BALANCE_API_URL = f"https://{API_HOST}/dashboard/billing/credit_grants"
 USAGE_API_URL = f"https://{API_HOST}/dashboard/billing/usage"
+CHATGLM_6B_URL = "http://10.109.68.1:8081/v1/chat/completions"
 HISTORY_DIR = Path("history")
 HISTORY_DIR = "history"
 TEMPLATES_DIR = "templates"
@@ -62,12 +63,12 @@ SUMMARIZE_PROMPT = "你是谁？我们刚才聊了什么？"  # 总结对话时�
 ONLINE_MODELS = [
     "chatglm-130b",
     "gpt-3.5-turbo",
-    "xmchat"
+    # "xmchat"
 ]
 
 LOCAL_MODELS = [
     "chatglm-6b",
-    "StableLM",
+    # "StableLM",
     "MOSS"
 ]
 
